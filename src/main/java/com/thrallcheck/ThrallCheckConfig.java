@@ -84,10 +84,21 @@ public interface ThrallCheckConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "checklist",
+		name = "Rune checklist when ready",
+		description = "With the book on you and Arceuus up, show the full rune checklist instead of the one-liner.",
+		position = 7
+	)
+	default boolean checklist()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "compact",
 		name = "Compact overlay",
 		description = "One line instead of the full breakdown. Turn off if you want the per-rune counts.",
-		position = 7
+		position = 8
 	)
 	default boolean compact()
 	{
@@ -97,8 +108,8 @@ public interface ThrallCheckConfig extends Config
 	@ConfigItem(
 		keyName = "hideWhenReady",
 		name = "Hide overlay when ready",
-		description = "Only shows the overlay when something is actually wrong.",
-		position = 8
+		description = "Only shows the overlay when something is actually wrong. The rune checklist overrides this.",
+		position = 9
 	)
 	default boolean hideWhenReady()
 	{
@@ -109,7 +120,7 @@ public interface ThrallCheckConfig extends Config
 		keyName = "warnMissingBook",
 		name = "Warn when the book is missing",
 		description = "Also warns when you're on Arceuus with no Book of the Dead on you. Noisy if you just teleport with Arceuus.",
-		position = 9
+		position = 10
 	)
 	default boolean warnMissingBook()
 	{

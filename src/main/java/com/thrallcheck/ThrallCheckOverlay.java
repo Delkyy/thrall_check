@@ -71,13 +71,18 @@ class ThrallCheckOverlay extends OverlayPanel
 			return null;
 		}
 
+		// book in hand and on arceuus. this is the moment the rune checklist is worth
+		// having, so it wins over compact and over hide-when-ready
+		boolean armed = state.isHasBook() && state.isOnArceuus() && config.checklist();
+
 		boolean ok = !state.wrongSpellbook() && state.isHasBook() && state.runesOk();
-		if (ok && config.hideWhenReady())
+		if (ok && config.hideWhenReady() && !armed)
 		{
 			return null;
 		}
 
-		List<Row> rows = config.compact() ? compactRows(state) : fullRows(state);
+		boolean full = armed || !config.compact();
+		List<Row> rows = full ? fullRows(state, armed) : compactRows(state);
 
 		FontMetrics fm = graphics.getFontMetrics();
 		int width = 0;
@@ -87,7 +92,7 @@ class ThrallCheckOverlay extends OverlayPanel
 		}
 		panelComponent.setPreferredSize(new Dimension(width, 0));
 
-		if (!config.compact())
+		if (full)
 		{
 			panelComponent.getChildren().add(TitleComponent.builder()
 				.text("Thralls")
@@ -135,11 +140,17 @@ class ThrallCheckOverlay extends OverlayPanel
 		return rows;
 	}
 
-	private List<Row> fullRows(ThrallState state)
+	private List<Row> fullRows(ThrallState state, boolean armed)
 	{
 		List<Row> rows = new ArrayList<>();
-		rows.add(new Row("Book", state.isHasBook() ? "yes" : "missing", state.isHasBook() ? GOOD : BAD));
-		rows.add(new Row("Spellbook", state.isOnArceuus() ? "Arceuus" : "wrong", state.isOnArceuus() ? GOOD : BAD));
+
+		// when you're armed both of these are green by definition, so they're just noise.
+		// show the runes and nothing else
+		if (!armed)
+		{
+			rows.add(new Row("Book", state.isHasBook() ? "yes" : "missing", state.isHasBook() ? GOOD : BAD));
+			rows.add(new Row("Spellbook", state.isOnArceuus() ? "Arceuus" : "wrong", state.isOnArceuus() ? GOOD : BAD));
+		}
 
 		ThrallTier tier = state.getTier();
 		if (tier == null)
