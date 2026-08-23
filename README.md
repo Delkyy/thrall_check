@@ -19,18 +19,20 @@ so it stays up.
 
 Panel shows the cost of one resurrection cast and what you're holding:
 
-| Tier | Magic | Runes |
-|---|---|---|
-| Lesser | 38 | 10 air, 5 mind, 1 cosmic |
-| Superior | 57 | 10 earth, 5 death, 1 cosmic |
-| Greater | 76 | 10 fire, 5 blood, 1 cosmic |
+| Tier | Magic | Prayer | Runes |
+|---|---|---|---|
+| Lesser | 38 | 2 | 10 air, 5 mind, 1 cosmic |
+| Superior | 57 | 4 | 10 earth, 5 death, 1 cosmic |
+| Greater | 76 | 6 | 10 fire, 5 blood, 1 cosmic |
 
 Counts inventory, rune pouch, combination runes, sunfire runes, elemental and
 combination staves, and a charged tome of fire or earth. Tier defaults to the best your
 Magic level allows.
 
-Prayer points are **not** checked. Greater costs 6 and if you're out of prayer the spell
-fails with the runes still in your bag, so that's worth adding later.
+Prayer counts too. A cast spends prayer points, so full runes and no prayer is still
+zero casts, and the cast count is whichever of the two runs out first.
+
+Overlay text size is configurable. 0 uses RuneLite's own overlay font.
 
 ## Build
 
@@ -51,10 +53,10 @@ In-game, on a live client:
 - **Full-screen flash works.** Covers the whole frame now.
 - **Panel sizes itself.** No overlap at any label length.
 
-Compiles clean, 13/13 unit tests.
+Compiles clean, 18/18 unit tests.
 
 Not yet seen in-game: the rune checklist appearing on its own when the book and Arceuus
-are both up. Prayer points are still not checked at all.
+are both up, and the prayer tracking.
 
 ## Two traps, already paid for
 

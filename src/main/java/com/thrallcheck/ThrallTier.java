@@ -10,23 +10,25 @@ import lombok.Getter;
 
 /**
  * The three resurrection tiers. Costs are off the wiki (Arceuus spellbook, resurrection
- * spells) and are per cast. Prayer cost is not checked here, only runes.
+ * spells) and are per cast.
  */
 @Getter
 enum ThrallTier
 {
-	LESSER("Lesser", 38, cost(10, Rune.AIR, 5, Rune.MIND, 1, Rune.COSMIC)),
-	SUPERIOR("Superior", 57, cost(10, Rune.EARTH, 5, Rune.DEATH, 1, Rune.COSMIC)),
-	GREATER("Greater", 76, cost(10, Rune.FIRE, 5, Rune.BLOOD, 1, Rune.COSMIC));
+	LESSER("Lesser", 38, 2, cost(10, Rune.AIR, 5, Rune.MIND, 1, Rune.COSMIC)),
+	SUPERIOR("Superior", 57, 4, cost(10, Rune.EARTH, 5, Rune.DEATH, 1, Rune.COSMIC)),
+	GREATER("Greater", 76, 6, cost(10, Rune.FIRE, 5, Rune.BLOOD, 1, Rune.COSMIC));
 
 	private final String name;
 	private final int magicLevel;
+	private final int prayerCost;
 	private final Map<Rune, Integer> cost;
 
-	ThrallTier(String name, int magicLevel, Map<Rune, Integer> cost)
+	ThrallTier(String name, int magicLevel, int prayerCost, Map<Rune, Integer> cost)
 	{
 		this.name = name;
 		this.magicLevel = magicLevel;
+		this.prayerCost = prayerCost;
 		this.cost = cost;
 	}
 

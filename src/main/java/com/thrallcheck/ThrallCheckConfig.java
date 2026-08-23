@@ -117,10 +117,22 @@ public interface ThrallCheckConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "fontSize",
+		name = "Overlay text size",
+		description = "Size of the overlay text. 0 uses RuneLite's own overlay font.",
+		position = 10
+	)
+	@Range(min = 0, max = 32)
+	default int fontSize()
+	{
+		return 0;
+	}
+
+	@ConfigItem(
 		keyName = "warnMissingBook",
 		name = "Warn when the book is missing",
 		description = "Also warns when you're on Arceuus with no Book of the Dead on you. Noisy if you just teleport with Arceuus.",
-		position = 10
+		position = 11
 	)
 	default boolean warnMissingBook()
 	{

@@ -21,13 +21,15 @@ class ThrallState
 	private final boolean onArceuus;
 	private final ThrallTier tier;
 	private final Map<Rune, Integer> have;
+	private final int prayer;
 
-	ThrallState(boolean hasBook, boolean onArceuus, ThrallTier tier, Map<Rune, Integer> have)
+	ThrallState(boolean hasBook, boolean onArceuus, ThrallTier tier, Map<Rune, Integer> have, int prayer)
 	{
 		this.hasBook = hasBook;
 		this.onArceuus = onArceuus;
 		this.tier = tier;
 		this.have = have == null ? new EnumMap<>(Rune.class) : have;
+		this.prayer = prayer;
 	}
 
 	boolean wrongSpellbook()
@@ -35,8 +37,8 @@ class ThrallState
 		return hasBook && !onArceuus;
 	}
 
-	/** How many casts the runes on you cover, capped so an infinite staff doesn't overflow. */
-	int casts()
+	/** Casts the runes alone would cover, ignoring prayer. */
+	int runeCasts()
 	{
 		if (tier == null)
 		{
@@ -56,8 +58,23 @@ class ThrallState
 		return casts;
 	}
 
+	/** Casts you can actually get off. Prayer is as hard a limit as runes are. */
+	int casts()
+	{
+		if (tier == null)
+		{
+			return 0;
+		}
+		return Math.min(runeCasts(), prayer / tier.getPrayerCost());
+	}
+
 	boolean runesOk()
 	{
-		return casts() > 0;
+		return runeCasts() > 0;
+	}
+
+	boolean prayerOk()
+	{
+		return tier != null && prayer >= tier.getPrayerCost();
 	}
 }

@@ -75,7 +75,7 @@ class ThrallCheckOverlay extends OverlayPanel
 		// having, so it wins over compact and over hide-when-ready
 		boolean armed = state.isHasBook() && state.isOnArceuus() && config.checklist();
 
-		boolean ok = !state.wrongSpellbook() && state.isHasBook() && state.runesOk();
+		boolean ok = !state.wrongSpellbook() && state.isHasBook() && state.runesOk() && state.prayerOk();
 		if (ok && config.hideWhenReady() && !armed)
 		{
 			return null;
@@ -83,6 +83,13 @@ class ThrallCheckOverlay extends OverlayPanel
 
 		boolean full = armed || !config.compact();
 		List<Row> rows = full ? fullRows(state, armed) : compactRows(state);
+
+		// set the font BEFORE measuring. measuring in one font and drawing in another is
+		// how you get the overlapping text bug back
+		if (config.fontSize() > 0)
+		{
+			graphics.setFont(graphics.getFont().deriveFont((float) config.fontSize()));
+		}
 
 		FontMetrics fm = graphics.getFontMetrics();
 		int width = 0;
@@ -102,11 +109,17 @@ class ThrallCheckOverlay extends OverlayPanel
 
 		for (Row row : rows)
 		{
-			panelComponent.getChildren().add(LineComponent.builder()
+			LineComponent.LineComponentBuilder line = LineComponent.builder()
 				.left(row.left)
 				.right(row.right)
-				.rightColor(row.color)
-				.build());
+				.rightColor(row.color);
+
+			if (config.fontSize() > 0)
+			{
+				line.leftFont(graphics.getFont()).rightFont(graphics.getFont());
+			}
+
+			panelComponent.getChildren().add(line.build());
 		}
 
 		return super.render(graphics);
@@ -128,6 +141,10 @@ class ThrallCheckOverlay extends OverlayPanel
 		else if (state.getTier() == null)
 		{
 			rows.add(new Row("Thralls", "38 mage", BAD));
+		}
+		else if (!state.prayerOk())
+		{
+			rows.add(new Row("Thralls", "no prayer", BAD));
 		}
 		else
 		{
@@ -168,6 +185,10 @@ class ThrallCheckOverlay extends OverlayPanel
 				held == ThrallState.INFINITE ? "\u221e" : shorten(held) + "/" + need.getValue(),
 				enough ? GOOD : BAD));
 		}
+
+		rows.add(new Row("Prayer",
+			state.getPrayer() + "/" + tier.getPrayerCost(),
+			state.prayerOk() ? GOOD : BAD));
 
 		int casts = state.casts();
 		rows.add(new Row(tier.getName() + " casts",

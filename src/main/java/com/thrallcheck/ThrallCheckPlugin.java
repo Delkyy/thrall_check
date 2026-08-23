@@ -69,7 +69,7 @@ public class ThrallCheckPlugin extends Plugin
 	private Notifier notifier;
 
 	@Getter
-	private ThrallState state = new ThrallState(false, false, null, null);
+	private ThrallState state = new ThrallState(false, false, null, null, 0);
 
 	private boolean warned;
 	private Instant wrongSince;
@@ -92,7 +92,7 @@ public class ThrallCheckPlugin extends Plugin
 	{
 		overlayManager.remove(overlay);
 		overlayManager.remove(flashOverlay);
-		state = new ThrallState(false, false, null, null);
+		state = new ThrallState(false, false, null, null, 0);
 		warned = false;
 		wrongSince = null;
 	}
@@ -148,7 +148,9 @@ public class ThrallCheckPlugin extends Plugin
 
 		boolean arceuus = client.getVarbitValue(VarbitID.SPELLBOOK) == ARCEUUS;
 
-		return new ThrallState(book, arceuus, tier(), countRunes(inv, worn));
+		// boosted, not real. that's your current points, which is what a cast spends
+		return new ThrallState(book, arceuus, tier(), countRunes(inv, worn),
+			client.getBoostedSkillLevel(Skill.PRAYER));
 	}
 
 	private ThrallTier tier()
