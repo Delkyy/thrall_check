@@ -84,32 +84,21 @@ public interface ThrallCheckConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "checklist",
-		name = "Rune checklist when ready",
-		description = "With the book on you and Arceuus up, show the full rune checklist instead of the one-liner.",
+		keyName = "overlayMode",
+		name = "Overlay mode",
+		description = "Auto shows one line normally and the full rune checklist once you're on Arceuus with the book.",
 		position = 7
 	)
-	default boolean checklist()
+	default OverlayMode overlayMode()
 	{
-		return true;
-	}
-
-	@ConfigItem(
-		keyName = "compact",
-		name = "Compact overlay",
-		description = "One line instead of the full breakdown. Turn off if you want the per-rune counts.",
-		position = 8
-	)
-	default boolean compact()
-	{
-		return true;
+		return OverlayMode.AUTO;
 	}
 
 	@ConfigItem(
 		keyName = "hideWhenReady",
 		name = "Hide overlay when ready",
-		description = "Only shows the overlay when something is actually wrong. The rune checklist overrides this.",
-		position = 9
+		description = "Only shows the overlay when something is actually wrong. Ignored while the checklist is up.",
+		position = 8
 	)
 	default boolean hideWhenReady()
 	{
@@ -145,5 +134,15 @@ public interface ThrallCheckConfig extends Config
 		LESSER,
 		SUPERIOR,
 		GREATER
+	}
+
+	enum OverlayMode
+	{
+		/** One line, until you're actually holding the book on arceuus. Then the runes. */
+		AUTO,
+		/** Always one line, even when armed. */
+		COMPACT,
+		/** Always the full breakdown. */
+		FULL
 	}
 }

@@ -71,17 +71,30 @@ class ThrallCheckOverlay extends OverlayPanel
 			return null;
 		}
 
-		// book in hand and on arceuus. this is the moment the rune checklist is worth
-		// having, so it wins over compact and over hide-when-ready
-		boolean armed = state.isHasBook() && state.isOnArceuus() && config.checklist();
+		// book in hand and on arceuus. the only state where the rune counts matter
+		boolean armed = state.isHasBook() && state.isOnArceuus();
 
 		boolean ok = !state.wrongSpellbook() && state.isHasBook() && state.runesOk() && state.prayerOk();
-		if (ok && config.hideWhenReady() && !armed)
+
+		boolean full;
+		switch (config.overlayMode())
+		{
+			case COMPACT:
+				full = false;
+				break;
+			case FULL:
+				full = true;
+				break;
+			default:
+				full = armed;
+		}
+
+		// hide-when-ready only yields to the auto checklist, never to an explicit COMPACT
+		if (ok && config.hideWhenReady() && !(full && config.overlayMode() == ThrallCheckConfig.OverlayMode.AUTO))
 		{
 			return null;
 		}
 
-		boolean full = armed || !config.compact();
 		List<Row> rows = full ? fullRows(state, armed) : compactRows(state);
 
 		// set the font BEFORE measuring. measuring in one font and drawing in another is

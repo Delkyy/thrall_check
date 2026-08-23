@@ -32,6 +32,9 @@ Magic level allows.
 Prayer counts too. A cast spends prayer points, so full runes and no prayer is still
 zero casts, and the cast count is whichever of the two runs out first.
 
+Overlay mode picks how much you see. Auto is one line normally, and swaps to the rune
+checklist the moment you're on Arceuus with the book. Compact and Full pin it either way.
+
 Overlay text size is configurable. 0 uses RuneLite's own overlay font.
 
 ## Build
