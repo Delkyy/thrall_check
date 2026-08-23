@@ -32,7 +32,7 @@ import net.runelite.client.ui.overlay.OverlayManager;
 
 @PluginDescriptor(
 	name = "Thrall Check",
-	description = "Warns when you're carrying the Book of the Dead on the wrong spellbook, and tracks thrall runes",
+	description = "Flashes the screen if you have the Book of the Dead on the wrong spellbook, and tracks your thrall runes and prayer",
 	tags = {"thrall", "arceuus", "spellbook", "book of the dead", "resurrect", "runes", "magic"}
 )
 public class ThrallCheckPlugin extends Plugin

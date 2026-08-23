@@ -1,19 +1,18 @@
 # Thrall Check
 
-RuneLite plugin. Two jobs:
+You get to the boss, click the thrall spell, and nothing happens. You were on standard
+the whole time, and the Book of the Dead has been sitting in your bag doing nothing.
 
-1. You're carrying the Book of the Dead and you're **not** on Arceuus. Screen flashes.
-2. Tells you whether you've actually got the runes for a thrall cast, before the fight
-   instead of during it.
+This plugin catches that before the fight starts.
 
 ## Spellbook flash
 
-The book only does anything on Arceuus. Carry it anywhere else and the plugin flashes
-the game frame until you switch back, or for however many seconds you set.
+The book only works on Arceuus. Carry it on any other spellbook and the screen flashes
+until you switch back, or for however many seconds you set.
 
-It uses its own flash instead of RuneLite's notifier flash, because that one cancels
-the second you move the mouse. This is a warning about a mistake you are still making,
-so it stays up.
+It uses its own flash rather than RuneLite's notifier flash, because that one cancels as
+soon as you move the mouse. This is a warning about a mistake you are still making, so it
+stays up.
 
 ## Rune counter
 
