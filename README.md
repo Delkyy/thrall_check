@@ -60,13 +60,6 @@ In-game, on a live client:
 
 Compiles clean, 18/18 unit tests.
 
-## Known gap
-
-Some areas refuse thralls outright ("You can't resurrect a thrall here"). The plugin
-doesn't know about those and will still report casts as available, because the book,
-runes and prayer genuinely are fine. Fixing it means tracking an area list that isn't
-cleanly exposed, for a case you generally already know about.
-
 ## Two traps, already paid for
 
 **The flash must not fill from 0,0.** `OverlayRenderer.safeRender` translates the
