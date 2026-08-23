@@ -63,6 +63,9 @@ public class ThrallCheckPlugin extends Plugin
 	private ThrallCheckOverlay overlay;
 
 	@Inject
+	private ThrallFlashOverlay flashOverlay;
+
+	@Inject
 	private Notifier notifier;
 
 	@Getter
@@ -81,12 +84,14 @@ public class ThrallCheckPlugin extends Plugin
 	protected void startUp()
 	{
 		overlayManager.add(overlay);
+		overlayManager.add(flashOverlay);
 	}
 
 	@Override
 	protected void shutDown()
 	{
 		overlayManager.remove(overlay);
+		overlayManager.remove(flashOverlay);
 		state = new ThrallState(false, false, null, null);
 		warned = false;
 		wrongSince = null;

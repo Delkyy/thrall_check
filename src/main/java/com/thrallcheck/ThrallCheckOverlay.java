@@ -7,10 +7,8 @@ package com.thrallcheck;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics2D;
-import java.awt.Rectangle;
 import java.util.Map;
 import javax.inject.Inject;
-import net.runelite.api.Client;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPanel;
 import net.runelite.client.ui.overlay.OverlayPosition;
@@ -22,27 +20,25 @@ class ThrallCheckOverlay extends OverlayPanel
 	private static final Color GOOD = new Color(0, 200, 83);
 	private static final Color BAD = new Color(255, 80, 80);
 
-	private final Client client;
+	// the full panel needs room for "37265/10", the compact one never does
+	private static final int WIDE = 129;
+	private static final int NARROW = 84;
+
 	private final ThrallCheckPlugin plugin;
 	private final ThrallCheckConfig config;
 
 	@Inject
-	ThrallCheckOverlay(Client client, ThrallCheckPlugin plugin, ThrallCheckConfig config)
+	ThrallCheckOverlay(ThrallCheckPlugin plugin, ThrallCheckConfig config)
 	{
-		this.client = client;
 		this.plugin = plugin;
 		this.config = config;
 		setPosition(OverlayPosition.TOP_LEFT);
-		// above widgets or the flash paints under the chatbox and you barely see it
 		setLayer(OverlayLayer.ABOVE_WIDGETS);
-		setPriority(PRIORITY_HIGH);
 	}
 
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		flash(graphics);
-
 		if (!config.showOverlay())
 		{
 			return null;
@@ -50,7 +46,7 @@ class ThrallCheckOverlay extends OverlayPanel
 
 		ThrallState state = plugin.getState();
 
-		// nothing to say if you're not anywhere near casting a thrall
+		// nothing worth saying if you're nowhere near casting a thrall
 		if (!state.isHasBook() && !state.isOnArceuus())
 		{
 			return null;
@@ -62,6 +58,54 @@ class ThrallCheckOverlay extends OverlayPanel
 			return null;
 		}
 
+		panelComponent.setPreferredSize(new Dimension(config.compact() ? NARROW : WIDE, 0));
+
+		if (config.compact())
+		{
+			return compact(graphics, state, ok);
+		}
+		return full(graphics, state, ok);
+	}
+
+	/** One line. Says what's wrong, or how many casts you're carrying. */
+	private Dimension compact(Graphics2D graphics, ThrallState state, boolean ok)
+	{
+		String text;
+		Color color;
+
+		if (state.wrongSpellbook())
+		{
+			text = "spellbook";
+			color = BAD;
+		}
+		else if (!state.isHasBook())
+		{
+			text = "no book";
+			color = BAD;
+		}
+		else if (state.getTier() == null)
+		{
+			text = "38 mage";
+			color = BAD;
+		}
+		else
+		{
+			int casts = state.casts();
+			text = casts == ThrallState.INFINITE ? "\u221e" : String.valueOf(casts);
+			color = casts > 0 ? GOOD : BAD;
+		}
+
+		panelComponent.getChildren().add(LineComponent.builder()
+			.left("Thralls")
+			.right(text)
+			.rightColor(color)
+			.build());
+
+		return super.render(graphics);
+	}
+
+	private Dimension full(Graphics2D graphics, ThrallState state, boolean ok)
+	{
 		panelComponent.getChildren().add(TitleComponent.builder()
 			.text("Thralls")
 			.color(ok ? GOOD : BAD)
@@ -96,7 +140,7 @@ class ThrallCheckOverlay extends OverlayPanel
 			boolean enough = held >= need.getValue();
 			panelComponent.getChildren().add(LineComponent.builder()
 				.left(need.getKey().getName())
-				.right(held == ThrallState.INFINITE ? "\u221e" : held + "/" + need.getValue())
+				.right(held == ThrallState.INFINITE ? "\u221e" : shorten(held) + "/" + need.getValue())
 				.rightColor(enough ? GOOD : BAD)
 				.build());
 		}
@@ -111,20 +155,17 @@ class ThrallCheckOverlay extends OverlayPanel
 		return super.render(graphics);
 	}
 
-	/**
-	 * Own flash rather than the Notifier's, because that one cancels itself the moment
-	 * you touch the mouse. This is a warning about a mistake you're still making.
-	 */
-	private void flash(Graphics2D graphics)
+	/** 37265 reads as 37k. nobody needs the exact count of a rune they have thousands of. */
+	private static String shorten(int n)
 	{
-		if (!plugin.shouldFlash() || client.getGameCycle() % 40 >= 20)
+		if (n >= 100_000)
 		{
-			return;
+			return n / 1000 + "k";
 		}
-
-		Color prev = graphics.getColor();
-		graphics.setColor(config.flashColor());
-		graphics.fill(new Rectangle(client.getCanvas().getSize()));
-		graphics.setColor(prev);
+		if (n >= 10_000)
+		{
+			return String.format("%.1fk", n / 1000f);
+		}
+		return String.valueOf(n);
 	}
 }

@@ -84,10 +84,21 @@ public interface ThrallCheckConfig extends Config
 	}
 
 	@ConfigItem(
+		keyName = "compact",
+		name = "Compact overlay",
+		description = "One line instead of the full breakdown. Turn off if you want the per-rune counts.",
+		position = 7
+	)
+	default boolean compact()
+	{
+		return true;
+	}
+
+	@ConfigItem(
 		keyName = "hideWhenReady",
 		name = "Hide overlay when ready",
 		description = "Only shows the overlay when something is actually wrong.",
-		position = 7
+		position = 8
 	)
 	default boolean hideWhenReady()
 	{
@@ -98,7 +109,7 @@ public interface ThrallCheckConfig extends Config
 		keyName = "warnMissingBook",
 		name = "Warn when the book is missing",
 		description = "Also warns when you're on Arceuus with no Book of the Dead on you. Noisy if you just teleport with Arceuus.",
-		position = 8
+		position = 9
 	)
 	default boolean warnMissingBook()
 	{
