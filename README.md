@@ -44,6 +44,24 @@ JAVA_HOME="/c/Program Files/Java/jdk-17" ./gradlew run
 
 ## Verified
 
-Compiles clean, 10/10 unit tests on the rune arithmetic. **Not yet run in a game
-client** - the varbit and item ids are read out of RuneLite's own source and the spell
-costs off the wiki, but none of it has been watched working in a real fight.
+In-game, on a live client:
+
+- **Rune counting works.** 3592 blood read correctly, picked blood as the limiting rune
+  over fire and cosmic, and auto-tier resolved to Greater off 79 Magic.
+- **Full-screen flash works.** Covers the whole frame now.
+- **Panel sizes itself.** No overlap at any label length.
+
+Compiles clean, 13/13 unit tests.
+
+Not yet seen in-game: the rune checklist appearing on its own when the book and Arceuus
+are both up. Prayer points are still not checked at all.
+
+## Two traps, already paid for
+
+**The flash must not fill from 0,0.** `OverlayRenderer.safeRender` translates the
+graphics origin to the overlay's position before calling render, so a fill at the origin
+lands wherever the panel sits and you get a box in the corner. Undo the translate first.
+
+**Never hardcode a panel width.** `LineComponent` doesn't clip when the text is wider
+than the panel, it wraps and squeezes both sides into each other. Measure the text with
+FontMetrics and size to fit. An 84px guess drew "Thralls" straight through "spellbook".
