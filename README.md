@@ -52,13 +52,20 @@ In-game, on a live client:
 
 - **Rune counting works.** 3592 blood read correctly, picked blood as the limiting rune
   over fire and cosmic, and auto-tier resolved to Greater off 79 Magic.
+- **Prayer works.** 71 prayer against 37.3k fire / 3587 blood / 7873 cosmic reported 11
+  casts, correctly limited by prayer rather than runes.
+- **Auto overlay mode works.** One line normally, full checklist once armed.
 - **Full-screen flash works.** Covers the whole frame now.
 - **Panel sizes itself.** No overlap at any label length.
 
 Compiles clean, 18/18 unit tests.
 
-Not yet seen in-game: the rune checklist appearing on its own when the book and Arceuus
-are both up, and the prayer tracking.
+## Known gap
+
+Some areas refuse thralls outright ("You can't resurrect a thrall here"). The plugin
+doesn't know about those and will still report casts as available, because the book,
+runes and prayer genuinely are fine. Fixing it means tracking an area list that isn't
+cleanly exposed, for a case you generally already know about.
 
 ## Two traps, already paid for
 
