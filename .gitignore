@@ -5,3 +5,6 @@ build
 .settings/
 .classpath
 *.zip
+
+# dev tooling, not for the public repo
+tools/
