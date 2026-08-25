@@ -5,14 +5,30 @@ the whole time, and the Book of the Dead has been sitting in your bag doing noth
 
 This plugin catches that before the fight starts.
 
-## Spellbook flash
+## Spellbook alert
 
-The book only works on Arceuus. Carry it on any other spellbook and the screen flashes
-until you switch back, or for however many seconds you set.
+The book only works on Arceuus. Carry it on any other spellbook and you get warned until
+you switch back.
+
+**Alert style** picks how:
+
+- **Flash** pulses the whole screen. Loud, impossible to miss. The colour has an opacity
+  slider - turn the A channel down if it blocks your view.
+- **Banner** draws a bar across the top instead. Same warning, no strobing.
+- **Off** leaves it to the panel and the notification.
 
 It uses its own flash rather than RuneLite's notifier flash, because that one cancels as
 soon as you move the mouse. This is a warning about a mistake you are still making, so it
 stays up.
+
+## Summon reminder
+
+Fighting with no thrall out gets you a reminder to summon one. There's a tick delay
+(default 5) so a single stray hit doesn't trigger it.
+
+There is no varbit for "do I have a thrall", so it watches the nine Arceuus thrall NPCs
+and checks the one it finds is **yours** - a follower interacting with you - rather than
+someone else's standing nearby at a bank or a boss lobby.
 
 ## Rune counter
 
@@ -57,8 +73,11 @@ In-game, on a live client:
 - **Auto overlay mode works.** One line normally, full checklist once armed.
 - **Full-screen flash works.** Covers the whole frame now.
 - **Panel sizes itself.** No overlap at any label length.
+- **Banner, opacity slider and summon reminder work.** Checked on a live client.
+- **The config migration runs once and is logged.** `thrallcheck.flash` unset,
+  `thrallcheck.migrated` written.
 
-Compiles clean, 18/18 unit tests.
+Compiles clean, 20/20 unit tests.
 
 ## Two traps, already paid for
 
