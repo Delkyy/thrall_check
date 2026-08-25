@@ -5,6 +5,7 @@
 package com.thrallcheck;
 
 import java.awt.Color;
+import net.runelite.client.config.Alpha;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
@@ -28,20 +29,21 @@ public interface ThrallCheckConfig extends Config
 	}
 
 	@ConfigItem(
-		keyName = "flash",
-		name = "Flash on wrong spellbook",
-		description = "Flashes the screen while you're holding the Book of the Dead on the wrong spellbook.",
+		keyName = "alertStyle",
+		name = "Alert style",
+		description = "How to warn you about the spellbook. Banner draws a bar across the top instead of flashing the whole screen.",
 		position = 2
 	)
-	default boolean flash()
+	default AlertStyle alertStyle()
 	{
-		return true;
+		return AlertStyle.FLASH;
 	}
 
+	@Alpha
 	@ConfigItem(
 		keyName = "flashColor",
 		name = "Flash colour",
-		description = "Colour of the screen flash.",
+		description = "Colour of the screen flash. The A slider is the opacity - turn it down if the flash blocks your view.",
 		position = 3
 	)
 	default Color flashColor()
@@ -102,7 +104,30 @@ public interface ThrallCheckConfig extends Config
 	)
 	default boolean hideWhenReady()
 	{
-		return false;
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "remindThrall",
+		name = "Remind me to summon",
+		description = "Shows a reminder while you're in combat with no thrall out.",
+		position = 9
+	)
+	default boolean remindThrall()
+	{
+		return true;
+	}
+
+	@ConfigItem(
+		keyName = "remindDelay",
+		name = "Remind after (ticks)",
+		description = "How long in combat before the reminder appears. Stops it firing on a single stray hit.",
+		position = 10
+	)
+	@Range(min = 0, max = 50)
+	default int remindDelay()
+	{
+		return 5;
 	}
 
 	@ConfigItem(
@@ -126,6 +151,16 @@ public interface ThrallCheckConfig extends Config
 	default boolean warnMissingBook()
 	{
 		return false;
+	}
+
+	enum AlertStyle
+	{
+		/** The whole screen pulses. Loud, impossible to miss. */
+		FLASH,
+		/** A bar across the top of the viewport. Says the same thing without blinding you. */
+		BANNER,
+		/** Overlay and notification only. */
+		OFF
 	}
 
 	enum TierMode

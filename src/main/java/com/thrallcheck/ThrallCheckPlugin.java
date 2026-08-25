@@ -8,9 +8,12 @@ import com.google.inject.Provides;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.EnumMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import javax.inject.Inject;
 import lombok.Getter;
+import net.runelite.api.Actor;
 import net.runelite.api.Client;
 import net.runelite.api.EnumComposition;
 import net.runelite.api.EnumID;
@@ -18,8 +21,14 @@ import net.runelite.api.EquipmentInventorySlot;
 import net.runelite.api.GameState;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
+import net.runelite.api.NPC;
+import net.runelite.api.NPCComposition;
+import net.runelite.api.Player;
 import net.runelite.api.Skill;
+import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
+import net.runelite.api.events.NpcDespawned;
+import net.runelite.api.events.NpcSpawned;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarbitID;
@@ -68,11 +77,21 @@ public class ThrallCheckPlugin extends Plugin
 	@Inject
 	private Notifier notifier;
 
+	@Inject
+	private ConfigManager configManager;
+
 	@Getter
 	private ThrallState state = new ThrallState(false, false, null, null, 0);
 
 	private boolean warned;
 	private Instant wrongSince;
+
+	/** Thralls we can currently see. Spawn/despawn keeps this honest across a hop. */
+	private final Set<NPC> thralls = new HashSet<>();
+
+	/** Ticks since we were last in combat. Counts up so a brief gap doesn't reset it. */
+	private int ticksInCombat;
+	private int ticksSinceCombat = Integer.MAX_VALUE;
 
 	@Provides
 	ThrallCheckConfig provideConfig(ConfigManager configManager)
@@ -83,8 +102,33 @@ public class ThrallCheckPlugin extends Plugin
 	@Override
 	protected void startUp()
 	{
+		migrate();
 		overlayManager.add(overlay);
 		overlayManager.add(flashOverlay);
+	}
+
+	/**
+	 * The old boolean "flash" key became the three-way "alertStyle".
+	 *
+	 * Renaming a key on a live plugin silently throws away what people already set, so
+	 * anyone who had turned flashing off keeps it off instead of getting a faceful of
+	 * red on the next login.
+	 */
+	private void migrate()
+	{
+		if (configManager.getConfiguration(ThrallCheckConfig.GROUP, "migrated") != null)
+		{
+			return;
+		}
+
+		String flash = configManager.getConfiguration(ThrallCheckConfig.GROUP, "flash");
+		if ("false".equals(flash))
+		{
+			configManager.setConfiguration(ThrallCheckConfig.GROUP, "alertStyle",
+				ThrallCheckConfig.AlertStyle.OFF);
+		}
+		configManager.unsetConfiguration(ThrallCheckConfig.GROUP, "flash");
+		configManager.setConfiguration(ThrallCheckConfig.GROUP, "migrated", "1");
 	}
 
 	@Override
@@ -95,6 +139,40 @@ public class ThrallCheckPlugin extends Plugin
 		state = new ThrallState(false, false, null, null, 0);
 		warned = false;
 		wrongSince = null;
+		thralls.clear();
+		ticksInCombat = 0;
+		ticksSinceCombat = Integer.MAX_VALUE;
+	}
+
+	@Subscribe
+	public void onNpcSpawned(NpcSpawned event)
+	{
+		NPC npc = event.getNpc();
+		if (ThrallNpcs.isThrall(npc.getId()))
+		{
+			thralls.add(npc);
+		}
+	}
+
+	@Subscribe
+	public void onNpcDespawned(NpcDespawned event)
+	{
+		thralls.remove(event.getNpc());
+	}
+
+	@Subscribe
+	public void onGameStateChanged(GameStateChanged event)
+	{
+		// npcs don't despawn cleanly across a hop or a loading screen, so the set would
+		// keep a thrall that isn't there and the reminder would never fire
+		if (event.getGameState() == GameState.LOADING
+			|| event.getGameState() == GameState.HOPPING
+			|| event.getGameState() == GameState.LOGIN_SCREEN)
+		{
+			thralls.clear();
+			ticksInCombat = 0;
+			ticksSinceCombat = Integer.MAX_VALUE;
+		}
 	}
 
 	@Subscribe
@@ -106,6 +184,7 @@ public class ThrallCheckPlugin extends Plugin
 		}
 
 		state = build();
+		trackCombat();
 
 		if (!needsWarning())
 		{
@@ -270,15 +349,104 @@ public class ThrallCheckPlugin extends Plugin
 		return item == null ? -1 : item.getId();
 	}
 
+	/**
+	 * Are we fighting, and is a thrall out?
+	 *
+	 * "In combat" is you interacting with an npc that's interacting back, which is the
+	 * same test the idle notifier uses. A monster you clicked once but walked away from
+	 * doesn't count, and neither does standing next to something fighting someone else.
+	 */
+	private void trackCombat()
+	{
+		Player me = client.getLocalPlayer();
+		boolean fighting = false;
+
+		if (me != null)
+		{
+			Actor target = me.getInteracting();
+			fighting = target instanceof NPC && !target.isDead()
+				&& target.getInteracting() == me;
+		}
+
+		if (fighting)
+		{
+			ticksInCombat++;
+			ticksSinceCombat = 0;
+		}
+		else
+		{
+			// a couple of ticks of grace so swapping targets doesn't reset the counter
+			if (ticksSinceCombat < Integer.MAX_VALUE)
+			{
+				ticksSinceCombat++;
+			}
+			if (ticksSinceCombat > 3)
+			{
+				ticksInCombat = 0;
+			}
+		}
+	}
+
+	/** True while you're fighting with nothing summoned. */
+	boolean needsThrall()
+	{
+		return config.remindThrall()
+			&& ticksInCombat >= config.remindDelay()
+			&& ticksSinceCombat <= 3
+			&& !hasThrall();
+	}
+
+	/**
+	 * Is one of the thralls on screen actually ours?
+	 *
+	 * A thrall follows its owner, so isFollower() plus interacting with us is the same
+	 * ownership test the entity hider uses for pets. Without it someone else's thrall
+	 * standing nearby would silence your reminder.
+	 */
+	private boolean hasThrall()
+	{
+		Player me = client.getLocalPlayer();
+		if (me == null)
+		{
+			return false;
+		}
+
+		for (NPC npc : thralls)
+		{
+			NPCComposition comp = npc.getComposition();
+			if (comp != null && comp.isFollower() && npc.getInteracting() == me)
+			{
+				return true;
+			}
+		}
+		return false;
+	}
+
 	/** True while the screen should be flashing. */
 	boolean shouldFlash()
 	{
-		if (!config.flash() || !state.wrongSpellbook() || wrongSince == null)
+		if (config.alertStyle() != ThrallCheckConfig.AlertStyle.FLASH
+			|| !state.wrongSpellbook() || wrongSince == null)
 		{
 			return false;
 		}
 
 		int secs = config.flashSeconds();
 		return secs <= 0 || Duration.between(wrongSince, Instant.now()).getSeconds() < secs;
+	}
+
+	/** True while the banner should be drawn instead of a flash. */
+	boolean shouldBanner()
+	{
+		return config.alertStyle() == ThrallCheckConfig.AlertStyle.BANNER
+			&& needsWarning();
+	}
+
+	/** What the banner should say. */
+	String bannerText()
+	{
+		return state.wrongSpellbook()
+			? "Wrong spellbook for thralls"
+			: "No Book of the Dead";
 	}
 }
