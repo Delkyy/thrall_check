@@ -14,6 +14,16 @@ import net.runelite.api.gameval.VarbitID;
  * Equipped gear that pays a rune cost for you. Only the elements thralls actually use
  * are listed, so no kodai or bryophyta here on purpose - water and nature buy you
  * nothing on a resurrection spell.
+ *
+ * Coverage verified 2026-08-25 against every STAFF_OF/_BATTLESTAFF/MYSTIC_*_STAFF
+ * constant in ItemID.java, cross-checked against the wiki's "Infinite fire rune
+ * sources" list. Confirmed complete:
+ *   - "(or)" recolours are NOT missing items - the wiki's own infobox id= field shows
+ *     e.g. "Mystic lava staff (or)" is id 21200, same as ItemID.MYSTIC_LAVA_STAFF_PRETTY,
+ *     already mapped below.
+ *   - Mind, Death, Blood and Cosmic have NO infinite source anywhere in the game -
+ *     checked, nothing turns up. Only air/earth/fire ever come from equipment, which is
+ *     why only those three appear in this file at all.
  */
 final class InfiniteRunes
 {
