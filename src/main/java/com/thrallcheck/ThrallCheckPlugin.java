@@ -8,9 +8,7 @@ import com.google.inject.Provides;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.EnumMap;
-import java.util.HashSet;
 import java.util.Map;
-import java.util.Set;
 import javax.inject.Inject;
 import lombok.Getter;
 import net.runelite.api.Actor;
@@ -22,13 +20,12 @@ import net.runelite.api.GameState;
 import net.runelite.api.Item;
 import net.runelite.api.ItemContainer;
 import net.runelite.api.NPC;
-import net.runelite.api.NPCComposition;
 import net.runelite.api.Player;
 import net.runelite.api.Skill;
 import net.runelite.api.events.GameStateChanged;
 import net.runelite.api.events.GameTick;
+import net.runelite.api.events.InteractingChanged;
 import net.runelite.api.events.NpcDespawned;
-import net.runelite.api.events.NpcSpawned;
 import net.runelite.api.gameval.InventoryID;
 import net.runelite.api.gameval.ItemID;
 import net.runelite.api.gameval.VarbitID;
@@ -89,12 +86,8 @@ public class ThrallCheckPlugin extends Plugin
 	private boolean warned;
 	private Instant wrongSince;
 
-	/** Thralls we can currently see. Spawn/despawn keeps this honest across a hop. */
-	private final Set<NPC> thralls = new HashSet<>();
-
-	/** Ticks since we were last in combat. Counts up so a brief gap doesn't reset it. */
-	private int ticksInCombat;
-	private int ticksSinceCombat = Integer.MAX_VALUE;
+	/** The tick combat with the current target actually started, or -1 if not fighting. */
+	private int combatStartTick = -1;
 
 	@Provides
 	ThrallCheckConfig provideConfig(ConfigManager configManager)
@@ -144,39 +137,64 @@ public class ThrallCheckPlugin extends Plugin
 		state = new ThrallState(false, false, null, null, 0);
 		warned = false;
 		wrongSince = null;
-		thralls.clear();
-		ticksInCombat = 0;
-		ticksSinceCombat = Integer.MAX_VALUE;
+		combatStartTick = -1;
 	}
 
 	@Subscribe
-	public void onNpcSpawned(NpcSpawned event)
+	public void onGameStateChanged(GameStateChanged event)
 	{
-		NPC npc = event.getNpc();
-		if (ThrallNpcs.isThrall(npc.getId()))
+		// stale combat state doesn't survive a hop or loading screen cleanly, so
+		// clear it rather than let a tick count from the old world carry over
+		if (event.getGameState() == GameState.LOADING
+			|| event.getGameState() == GameState.HOPPING
+			|| event.getGameState() == GameState.LOGIN_SCREEN)
 		{
-			thralls.add(npc);
+			combatStartTick = -1;
+		}
+	}
+
+	/**
+	 * Fires the instant an actor's interaction target changes - the tick combat
+	 * actually starts or ends, rather than something inferred by polling and counting.
+	 *
+	 * Only our own player's own change matters here. The target's death is caught
+	 * separately (a dead target's getInteracting() can still read stale for a tick).
+	 */
+	@Subscribe
+	public void onInteractingChanged(InteractingChanged event)
+	{
+		Player me = client.getLocalPlayer();
+		if (me == null || event.getSource() != me)
+		{
+			return;
+		}
+
+		Actor target = event.getTarget();
+		boolean fighting = target instanceof NPC && !target.isDead() && target.getInteracting() == me;
+
+		if (fighting)
+		{
+			if (combatStartTick < 0)
+			{
+				combatStartTick = client.getTickCount();
+			}
+		}
+		else
+		{
+			combatStartTick = -1;
 		}
 	}
 
 	@Subscribe
 	public void onNpcDespawned(NpcDespawned event)
 	{
-		thralls.remove(event.getNpc());
-	}
-
-	@Subscribe
-	public void onGameStateChanged(GameStateChanged event)
-	{
-		// npcs don't despawn cleanly across a hop or a loading screen, so the set would
-		// keep a thrall that isn't there and the reminder would never fire
-		if (event.getGameState() == GameState.LOADING
-			|| event.getGameState() == GameState.HOPPING
-			|| event.getGameState() == GameState.LOGIN_SCREEN)
+		// a killed target despawns the same tick it dies, which is the actual end of
+		// combat - waiting on InteractingChanged for a dead target is a tick or more
+		// late, since interacting state can linger briefly after the kill
+		Player me = client.getLocalPlayer();
+		if (me != null && event.getNpc() == me.getInteracting())
 		{
-			thralls.clear();
-			ticksInCombat = 0;
-			ticksSinceCombat = Integer.MAX_VALUE;
+			combatStartTick = -1;
 		}
 	}
 
@@ -189,7 +207,6 @@ public class ThrallCheckPlugin extends Plugin
 		}
 
 		state = build();
-		trackCombat();
 
 		if (!needsWarning())
 		{
@@ -366,77 +383,30 @@ public class ThrallCheckPlugin extends Plugin
 		return item == null ? -1 : item.getId();
 	}
 
-	/**
-	 * Are we fighting, and is a thrall out?
-	 *
-	 * "In combat" is you interacting with an npc that's interacting back, which is the
-	 * same test the idle notifier uses. A monster you clicked once but walked away from
-	 * doesn't count, and neither does standing next to something fighting someone else.
-	 */
-	private void trackCombat()
-	{
-		Player me = client.getLocalPlayer();
-		boolean fighting = false;
-
-		if (me != null)
-		{
-			Actor target = me.getInteracting();
-			fighting = target instanceof NPC && !target.isDead()
-				&& target.getInteracting() == me;
-		}
-
-		if (fighting)
-		{
-			ticksInCombat++;
-			ticksSinceCombat = 0;
-		}
-		else
-		{
-			// a couple of ticks of grace so swapping targets doesn't reset the counter
-			if (ticksSinceCombat < Integer.MAX_VALUE)
-			{
-				ticksSinceCombat++;
-			}
-			if (ticksSinceCombat > 3)
-			{
-				ticksInCombat = 0;
-			}
-		}
-	}
-
 	/** True while you're fighting with nothing summoned. */
 	boolean needsThrall()
 	{
 		return config.remindThrall()
-			&& ticksInCombat >= config.remindDelay()
-			&& ticksSinceCombat <= 3
+			&& combatStartTick >= 0
+			&& client.getTickCount() - combatStartTick >= config.remindDelay()
 			&& !hasThrall();
 	}
 
 	/**
 	 * Is one of the thralls on screen actually ours?
 	 *
-	 * A thrall follows its owner, so isFollower() plus interacting with us is the same
-	 * ownership test the entity hider uses for pets. Without it someone else's thrall
-	 * standing nearby would silence your reminder.
+	 * client.getFollower() is the single NPC the game itself considers your follower -
+	 * the exact same check core's EntityHiderPlugin uses to tell your pet from
+	 * everyone else's. The old check (isFollower() + interacting with you) was wrong:
+	 * it fires for ANY thrall attacking whatever you're attacking, yours or not, which
+	 * is common in a crowded spot - a boss room, a slayer dungeon, standing near
+	 * another Arceuus user. That silenced the reminder while YOUR thrall was actually
+	 * gone, and could equally show "ready" off someone else's thrall.
 	 */
 	private boolean hasThrall()
 	{
-		Player me = client.getLocalPlayer();
-		if (me == null)
-		{
-			return false;
-		}
-
-		for (NPC npc : thralls)
-		{
-			NPCComposition comp = npc.getComposition();
-			if (comp != null && comp.isFollower() && npc.getInteracting() == me)
-			{
-				return true;
-			}
-		}
-		return false;
+		NPC follower = client.getFollower();
+		return follower != null && ThrallNpcs.isThrall(follower.getId());
 	}
 
 	/** True while the screen should be flashing. */
