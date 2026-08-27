@@ -16,11 +16,12 @@ import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 
 /**
- * The screen-wide alerts: the flash, the banner, and the summon reminder.
+ * The screen-wide alerts: the flash, and the spellbook banner.
  *
- * All three live here rather than on the panel because they're drawn against the whole
- * viewport, and because turning the panel off shouldn't turn off the thing that's
- * shouting at you.
+ * Both live here because they're drawn against the whole viewport at OverlayPosition
+ * .DYNAMIC, which is what a full-screen flash needs. The summon reminder used to be
+ * here too but DYNAMIC overlays can't be dragged (see ThrallReminderOverlay), so it
+ * moved to its own movable panel.
  *
  * OverlayRenderer translates the graphics origin to wherever the overlay sits before it
  * calls render, so filling from 0,0 gives you a rectangle in the corner and not a full
@@ -29,8 +30,6 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 class ThrallFlashOverlay extends Overlay
 {
 	private static final Color BANNER_BG = new Color(0, 0, 0, 170);
-	private static final Color REMIND_BG = new Color(0, 0, 0, 170);
-	private static final Color REMIND_FG = new Color(0x9d, 0x6b, 0xd9);
 
 	private final Client client;
 	private final ThrallCheckPlugin plugin;
@@ -58,14 +57,9 @@ class ThrallFlashOverlay extends Overlay
 
 		flash(graphics);
 
-		int y = 0;
 		if (plugin.shouldBanner())
 		{
-			y = banner(graphics, plugin.bannerText(), config.flashColor(), BANNER_BG, y);
-		}
-		if (plugin.needsThrall())
-		{
-			banner(graphics, "Summon a thrall", REMIND_FG, REMIND_BG, y);
+			banner(graphics, plugin.bannerText(), config.flashColor(), BANNER_BG);
 		}
 
 		graphics.translate(b.x, b.y);
@@ -86,26 +80,24 @@ class ThrallFlashOverlay extends Overlay
 	}
 
 	/**
-	 * A bar across the top of the viewport. Returns the y to draw the next one at.
+	 * A bar across the top of the viewport.
 	 *
 	 * Centred on the canvas rather than the overlay's own bounds, and sized from real
 	 * FontMetrics - a hardcoded width is what broke the panel the first time.
 	 */
-	private int banner(Graphics2D graphics, String text, Color fg, Color bg, int y)
+	private void banner(Graphics2D graphics, String text, Color fg, Color bg)
 	{
 		FontMetrics fm = graphics.getFontMetrics();
 		int pad = 8;
 		int w = fm.stringWidth(text) + pad * 2;
 		int h = fm.getHeight() + pad;
 		int x = (client.getCanvasWidth() - w) / 2;
-		int top = y + 6;
+		int top = 6;
 
 		graphics.setColor(bg);
 		graphics.fillRect(x, top, w, h);
 		graphics.setColor(fg);
 		graphics.drawRect(x, top, w, h);
 		graphics.drawString(text, x + pad, top + fm.getAscent() + pad / 2);
-
-		return top + h;
 	}
 }

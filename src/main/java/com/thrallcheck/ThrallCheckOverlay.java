@@ -40,6 +40,44 @@ class ThrallCheckOverlay extends OverlayPanel
 		setLayer(OverlayLayer.ABOVE_WIDGETS);
 	}
 
+	/** Everything a cast needs is true right now. */
+	static boolean isOk(ThrallState state)
+	{
+		return !state.wrongSpellbook() && state.isHasBook() && state.runesOk() && state.prayerOk();
+	}
+
+	/**
+	 * Once everything's actually fine there's nothing left to say. Bug: the old
+	 * version only hid the checklist when in AUTO mode AND the full checklist was
+	 * showing - which is exactly the state right after fixing the last thing wrong -
+	 * so the box sat there doing nothing after every requirement was met.
+	 */
+	static boolean shouldHide(boolean ok, boolean hideWhenReady)
+	{
+		return ok && hideWhenReady;
+	}
+
+	/**
+	 * Whether to show every requirement or just one line.
+	 *
+	 * Bug: the old AUTO rule was "full once book+spellbook are both right", which hid
+	 * a rune shortfall behind the spellbook warning - fix the spellbook and only then
+	 * find out you're also short on runes. Show every reason at once whenever anything
+	 * is wrong, not only once you're past the first problem found.
+	 */
+	static boolean showFullChecklist(ThrallCheckConfig.OverlayMode mode, boolean ok)
+	{
+		switch (mode)
+		{
+			case COMPACT:
+				return false;
+			case FULL:
+				return true;
+			default:
+				return !ok;
+		}
+	}
+
 	/** One row of the panel, held as data so the width can be measured before drawing. */
 	private static class Row
 	{
@@ -74,26 +112,14 @@ class ThrallCheckOverlay extends OverlayPanel
 		// book in hand and on arceuus. the only state where the rune counts matter
 		boolean armed = state.isHasBook() && state.isOnArceuus();
 
-		boolean ok = !state.wrongSpellbook() && state.isHasBook() && state.runesOk() && state.prayerOk();
+		boolean ok = isOk(state);
 
-		boolean full;
-		switch (config.overlayMode())
-		{
-			case COMPACT:
-				full = false;
-				break;
-			case FULL:
-				full = true;
-				break;
-			default:
-				full = armed;
-		}
-
-		// hide-when-ready only yields to the auto checklist, never to an explicit COMPACT
-		if (ok && config.hideWhenReady() && !(full && config.overlayMode() == ThrallCheckConfig.OverlayMode.AUTO))
+		if (shouldHide(ok, config.hideWhenReady()))
 		{
 			return null;
 		}
+
+		boolean full = showFullChecklist(config.overlayMode(), ok);
 
 		List<Row> rows = full ? fullRows(state, armed) : compactRows(state);
 
@@ -174,8 +200,8 @@ class ThrallCheckOverlay extends OverlayPanel
 	{
 		List<Row> rows = new ArrayList<>();
 
-		// when you're armed both of these are green by definition, so they're just noise.
-		// show the runes and nothing else
+		// spellbook and book status - hidden once armed since both are green by
+		// definition, so they'd just be noise sitting above the runes
 		if (!armed)
 		{
 			rows.add(new Row("Book", state.isHasBook() ? "yes" : "missing", state.isHasBook() ? GOOD : BAD));

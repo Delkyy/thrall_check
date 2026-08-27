@@ -75,6 +75,9 @@ public class ThrallCheckPlugin extends Plugin
 	private ThrallFlashOverlay flashOverlay;
 
 	@Inject
+	private ThrallReminderOverlay reminderOverlay;
+
+	@Inject
 	private Notifier notifier;
 
 	@Inject
@@ -105,6 +108,7 @@ public class ThrallCheckPlugin extends Plugin
 		migrate();
 		overlayManager.add(overlay);
 		overlayManager.add(flashOverlay);
+		overlayManager.add(reminderOverlay);
 	}
 
 	/**
@@ -136,6 +140,7 @@ public class ThrallCheckPlugin extends Plugin
 	{
 		overlayManager.remove(overlay);
 		overlayManager.remove(flashOverlay);
+		overlayManager.remove(reminderOverlay);
 		state = new ThrallState(false, false, null, null, 0);
 		warned = false;
 		wrongSince = null;

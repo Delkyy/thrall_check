@@ -31,6 +31,22 @@ final class ThrallNpcs
 		IDS.add(NpcID.ARCEUUS_THRALL_ZOMBIE_LESSER);
 		IDS.add(NpcID.ARCEUUS_THRALL_ZOMBIE_SUPERIOR);
 		IDS.add(NpcID.ARCEUUS_THRALL_ZOMBIE_GREATER);
+
+		// the Impish whistle cosmetic override reskins a normal thrall as an imp -
+		// same spell, same tier, different model. missing these is what let a real
+		// thrall go undetected and the reminder fire while one was standing right
+		// there. checked: "The impish whistle can be used to unlock a cosmetic
+		// override for thralls, giving them the appearances of imps."
+		// (oldschool.runescape.wiki/w/Thrall)
+		IDS.add(NpcID.THRALL_IMP_MAGIC_LESSER);
+		IDS.add(NpcID.THRALL_IMP_MAGIC_SUPERIOR);
+		IDS.add(NpcID.THRALL_IMP_MAGIC_GREATER);
+		IDS.add(NpcID.THRALL_IMP_RANGED_LESSER);
+		IDS.add(NpcID.THRALL_IMP_RANGED_SUPERIOR);
+		IDS.add(NpcID.THRALL_IMP_RANGED_GREATER);
+		IDS.add(NpcID.THRALL_IMP_MELEE_LESSER);
+		IDS.add(NpcID.THRALL_IMP_MELEE_SUPERIOR);
+		IDS.add(NpcID.THRALL_IMP_MELEE_GREATER);
 	}
 
 	private ThrallNpcs()

@@ -18,8 +18,9 @@ public class ThrallNpcsTest
 	@Test
 	public void everyArceuusThrallCounts()
 	{
-		// three types, three tiers. missing any one means the reminder nags while that
-		// thrall is standing right there.
+		// three types, three tiers, plus the same set again with the Impish whistle
+		// cosmetic applied. missing any one means the reminder nags while that thrall
+		// is standing right there.
 		int[] all = {
 			NpcID.ARCEUUS_THRALL_GHOST_LESSER,
 			NpcID.ARCEUUS_THRALL_GHOST_SUPERIOR,
@@ -30,6 +31,15 @@ public class ThrallNpcsTest
 			NpcID.ARCEUUS_THRALL_ZOMBIE_LESSER,
 			NpcID.ARCEUUS_THRALL_ZOMBIE_SUPERIOR,
 			NpcID.ARCEUUS_THRALL_ZOMBIE_GREATER,
+			NpcID.THRALL_IMP_MAGIC_LESSER,
+			NpcID.THRALL_IMP_MAGIC_SUPERIOR,
+			NpcID.THRALL_IMP_MAGIC_GREATER,
+			NpcID.THRALL_IMP_RANGED_LESSER,
+			NpcID.THRALL_IMP_RANGED_SUPERIOR,
+			NpcID.THRALL_IMP_RANGED_GREATER,
+			NpcID.THRALL_IMP_MELEE_LESSER,
+			NpcID.THRALL_IMP_MELEE_SUPERIOR,
+			NpcID.THRALL_IMP_MELEE_GREATER,
 		};
 
 		for (int id : all)
@@ -41,8 +51,7 @@ public class ThrallNpcsTest
 	@Test
 	public void otherFollowersAreNotThralls()
 	{
-		// the imp thralls are a different spell entirely, and the toa baboon isn't ours
-		assertFalse(ThrallNpcs.isThrall(NpcID.THRALL_IMP_MAGIC_GREATER));
+		// the toa baboon isn't ours, even though it's also a "thrall" by name
 		assertFalse(ThrallNpcs.isThrall(NpcID.TOA_PATH_APMEKEN_BABOON_THRALL));
 		assertFalse(ThrallNpcs.isThrall(0));
 		assertFalse(ThrallNpcs.isThrall(-1));
