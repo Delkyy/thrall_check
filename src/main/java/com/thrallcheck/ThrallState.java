@@ -22,14 +22,22 @@ class ThrallState
 	private final ThrallTier tier;
 	private final Map<Rune, Integer> have;
 	private final int prayer;
+	private final boolean tomeInBagUnused;
 
 	ThrallState(boolean hasBook, boolean onArceuus, ThrallTier tier, Map<Rune, Integer> have, int prayer)
+	{
+		this(hasBook, onArceuus, tier, have, prayer, false);
+	}
+
+	ThrallState(boolean hasBook, boolean onArceuus, ThrallTier tier, Map<Rune, Integer> have, int prayer,
+		boolean tomeInBagUnused)
 	{
 		this.hasBook = hasBook;
 		this.onArceuus = onArceuus;
 		this.tier = tier;
 		this.have = have == null ? new EnumMap<>(Rune.class) : have;
 		this.prayer = prayer;
+		this.tomeInBagUnused = tomeInBagUnused;
 	}
 
 	boolean wrongSpellbook()

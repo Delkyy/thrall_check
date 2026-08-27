@@ -229,6 +229,14 @@ class ThrallCheckOverlay extends OverlayPanel
 			state.getPrayer() + "/" + tier.getPrayerCost(),
 			state.prayerOk() ? GOOD : BAD));
 
+		if (state.isTomeInBagUnused())
+		{
+			// the fire/earth tomes only give their runes while worn in the shield
+			// slot - which the Book of the Dead also needs. carrying one in the bag
+			// alongside the book does nothing, and gives no in-game error saying so.
+			rows.add(new Row("Tome", "not equipped", BAD));
+		}
+
 		int casts = state.casts();
 		rows.add(new Row(tier.getName() + " casts",
 			casts == ThrallState.INFINITE ? "\u221e" : String.valueOf(casts),

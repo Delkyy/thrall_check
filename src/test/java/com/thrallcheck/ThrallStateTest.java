@@ -164,4 +164,33 @@ public class ThrallStateTest
 		assertTrue(lesser.prayerOk());
 		assertEquals(2, lesser.casts());
 	}
+
+	// tome in the bag but not equipped - the shield-slot conflict with the Book of
+	// the Dead. this doesn't change any of the arithmetic above (the tome just never
+	// contributed runes if it wasn't equipped when countRunes() ran), but the flag
+	// itself needs its own coverage since a wrong default would silently mislabel
+	// every other test's ThrallState as "tome unused" or vice versa.
+
+	@Test
+	public void tomeUnusedDefaultsToFalseOnTheOldConstructor()
+	{
+		// every other test in this file uses the 5-arg constructor. if this default
+		// were ever true, every one of those states would wrongly report the tome
+		// conflict warning.
+		ThrallState s = new ThrallState(true, true, ThrallTier.GREATER,
+			runes(Rune.FIRE, 100, Rune.BLOOD, 100, Rune.COSMIC, 100), FULL_PRAYER);
+		assertFalse(s.isTomeInBagUnused());
+	}
+
+	@Test
+	public void tomeUnusedFlagIsCarriedThroughUnchanged()
+	{
+		ThrallState flagged = new ThrallState(true, true, ThrallTier.GREATER,
+			runes(Rune.FIRE, 100, Rune.BLOOD, 100, Rune.COSMIC, 100), FULL_PRAYER, true);
+		assertTrue(flagged.isTomeInBagUnused());
+
+		ThrallState clear = new ThrallState(true, true, ThrallTier.GREATER,
+			runes(Rune.FIRE, 100, Rune.BLOOD, 100, Rune.COSMIC, 100), FULL_PRAYER, false);
+		assertFalse(clear.isTomeInBagUnused());
+	}
 }

@@ -232,9 +232,21 @@ public class ThrallCheckPlugin extends Plugin
 
 		boolean arceuus = client.getVarbitValue(VarbitID.SPELLBOOK) == ARCEUUS;
 
+		// Book of the Dead and every fire/water/earth tome are ALL shield-slot items,
+		// so they can never be worn together. The book is fine in the bag - the wiki
+		// says so explicitly - but a tome only gives its infinite runes "while
+		// equipped". Someone who keeps the book on their back like normal and just
+		// carries a tome has it doing nothing, with no error and no message. Flag it
+		// so the overlay can say why, instead of the rune count just quietly not
+		// including something the player can see in their inventory.
+		boolean tomeUnused = inv != null
+			&& equippedId(worn, EquipmentInventorySlot.SHIELD) != ItemID.TOME_OF_FIRE
+			&& equippedId(worn, EquipmentInventorySlot.SHIELD) != ItemID.TOME_OF_EARTH
+			&& (inv.contains(ItemID.TOME_OF_FIRE) || inv.contains(ItemID.TOME_OF_EARTH));
+
 		// boosted, not real. that's your current points, which is what a cast spends
 		return new ThrallState(book, arceuus, tier(), countRunes(inv, worn),
-			client.getBoostedSkillLevel(Skill.PRAYER));
+			client.getBoostedSkillLevel(Skill.PRAYER), tomeUnused);
 	}
 
 	private ThrallTier tier()
